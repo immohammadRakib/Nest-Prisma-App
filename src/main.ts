@@ -1,8 +1,16 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module.js'; // Note: NodeNext schema tracking requires explicit '.js' extension matching configuration properties standard setup
+import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+
+  // এই লাইনটি অবশ্যই থাকতে হবে
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // DTO-র বাইরে অতিরিক্ত ডাটা আসলে তা ফিল্টার করে দেবে
+    transform: true, // ইনপুট ডাটাকে অটোমেটিক সঠিক টাইপে রূপান্তর করবে
+  }));
+
+  await app.listen(3000);
 }
 bootstrap();

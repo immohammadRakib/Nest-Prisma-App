@@ -1,14 +1,113 @@
+// 1. Datasource Setup
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Note: Local-e run korle Prisma 7 e url dorkar nai, 
+  // kintu migrate command-er jonno thaka bhalo.
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
+// 2. ENUMS (Roles definition)
+enum Role {
+  ADMIN
+  SELLER
+  BUYER
+}
+
 model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
+  id        String    @id @default(uuid())
+  email     String    @unique
+  name      String
+  phone     String?
+  role      Role      @default(BUYER)
+  // Ekane 'Address' er por '[]' dite hobe (Mane onek gulo address)
+  addresses Address[] 
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+
+model Address {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  addressLine1  String
+  addressLine2  String?
+  city          String
+  state         String?
+  postalCode    String
+  country       String   @default("Bangladesh")
+  isDefault     Boolean  @default(false)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("addresses")
+}
+
+
+// 4. Category Model
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  products    Product[] // One-to-Many relation with Product
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+// 5. Product Model
+model Product {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  price        Float
+  stock        Int      @default(0)
+  images       String[] // Array of strings (image URLs)
+  isActive     Boolean  @default(true)
+  isApproved   Boolean  @default(false)
+  
+  // Relations & Foreign Keys
+  sellerId     String   // Coming from JWT or User service
+  categoryId   String
+  category     Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  reviews      Review[] // One-to-Many relation with Review
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([sellerId])
+  @@map("products")
+}
+
+// 6. Review Model
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int      @default(5)
+  comment     String?
+  
+  buyerId     String   
+  buyerName   String   // Performance boost: name store kora jate onno service-e hit na lage
+  
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([productId])
+  @@index([buyerId])
+  @@map("reviews")
 }

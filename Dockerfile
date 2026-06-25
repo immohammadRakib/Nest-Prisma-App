@@ -1,0 +1,33 @@
+FROM node:24-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+
+# Prisma config file copy hoise kina sure hote hobe
+# Prisma generate korar shomoy validation bypass korar jonno eita dorkar
+RUN npx prisma generate
+
+RUN npm run build
+
+FROM node:24-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm install --only=production
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+EXPOSE 3000
+CMD ["node", "dist/src/main.js"]
+
+
+# ... (uporer ongsho thik thakbe)
+COPY . .
+
+# Prisma validation skip korar chesta ebong configuration load nishchit kora
+RUN npx prisma generate
+
+RUN npx nest build
+# ... (baki ongsho)
