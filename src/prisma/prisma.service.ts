@@ -8,7 +8,6 @@ import pg from 'pg';
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
     // Console log check korar jonno url link validation print hobe terminal-e
-    console.log("Prisma Driver Connecting with URL:", process.env.DATABASE_URL);
 
     // 1. Core PG library setup wrapper pool string logic integration
     const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
