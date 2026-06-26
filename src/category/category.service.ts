@@ -17,16 +17,14 @@ export class CategoryService {
     return this.prisma.category.findMany();
   }
 
-  // ১. id এর টাইপ পরিবর্তন করে string করা হয়েছে
   async findOne(id: string) { 
     const category = await this.prisma.category.findUnique({ where: { id } });
     if (!category) throw new NotFoundException(`Category with ID ${id} not found`);
     return category;
   }
 
-  // ২. id এর টাইপ পরিবর্তন করে string করা হয়েছে
   async update(id: string, data: CreateCategoryDto) {
-    await this.findOne(id); // ক্যাটাগরি না থাকলে এরর দেবে
+    await this.findOne(id); 
     const slug = data.name.toLowerCase().trim().replace(/\s+/g, '-');
     return this.prisma.category.update({
       where: { id },
@@ -34,9 +32,8 @@ export class CategoryService {
     });
   }
 
-  // ৩. id এর টাইপ পরিবর্তন করে string করা হয়েছে
   async remove(id: string) {
-    await this.findOne(id); // ক্যাটাগরি না থাকলে এরর দেবে
+    await this.findOne(id); 
     return this.prisma.category.delete({ where: { id } });
   }
 }

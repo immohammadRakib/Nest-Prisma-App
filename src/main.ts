@@ -5,10 +5,11 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // এই লাইনটি অবশ্যই থাকতে হবে
+  app.enableCors();
+
   app.useGlobalPipes(new ValidationPipe({
-    whitelist: true, // DTO-র বাইরে অতিরিক্ত ডাটা আসলে তা ফিল্টার করে দেবে
-    transform: true, // ইনপুট ডাটাকে অটোমেটিক সঠিক টাইপে রূপান্তর করবে
+    whitelist: true, 
+    transform: true, 
   }));
 
   await app.listen(3000);

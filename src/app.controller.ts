@@ -13,6 +13,7 @@ async createUser(@Body() data: { email: string; name: string }) {
     data: {
       email: data.email,
       name: data.name,
+      passwordHash: 'dummy_hash_string',
     } 
   });
 }
