@@ -1,26 +1,81 @@
 version: '3.8'
+
 services:
-  postgres_db:
+  nestjs-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ecom-nestjs-app
+    ports:
+      - "3000:3000"
+    restart: always
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      - DATABASE_URL=postgresql://postgres:1234@postgres:5432/nest-prisma-app?schema=public
+      - JWT_ACCESS_SECRET=mySuperSecureAndLongAccessTokenSecretKey2026!!
+      - JWT_REFRESH_SECRET=mySuperSecureAndLongRefreshTokenSecretKey2026!!
+    networks:
+      - ecom-network
+
+
+  postgres:
     image: postgres:15-alpine
-    container_name: nest_postgres_container
+    container_name: ecom-postgres
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: apnar_password
-      POSTGRES_DB: apnar_db_name
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: nest-prisma-app
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - ecom-network
 
-  nest_app:
-    build: .
-    container_name: nest_prisma_app_container
+  
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ecom-rabbitmq
     ports:
-      - "3000:3000"
-    depends_on:
-      - postgres_db
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ecom-network
+
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    container_name: ecom-zookeeper
     environment:
-      DATABASE_URL: "postgresql://postgres:1234@postgres_db:5432/nest-prisma-app?schema=public"
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - ecom-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.0
+    container_name: ecom-kafka
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - ecom-network
 
 volumes:
   pgdata:
+  rabbitmq_data:
+
+networks:
+  ecom-network:
+    driver: bridge

@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, ForbiddenException } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('PRODUCT_SIGNAL_SERVICE') private readonly client: ClientProxy, // ক্লায়েন্ট ইনজেক্ট হলো
+  ) {}
 
   async create(dto: CreateProductDto, sellerId: string) {
     const category = await this.prisma.category.findUnique({
@@ -18,7 +22,7 @@ export class ProductService {
     const productSlug = dto.name.toLowerCase().trim().replace(/\s+/g, '-');
     const { categorySlug, ...productData } = dto;
 
-    return this.prisma.product.create({
+    const newProduct = await this.prisma.product.create({
       data: {
         ...productData,
         slug: productSlug,
@@ -26,6 +30,15 @@ export class ProductService {
         sellerId: sellerId, 
       },
     });
+
+    this.client.emit('product_created', {
+      id: newProduct.id,
+      name: newProduct.name,
+      price: newProduct.price,
+      stock: newProduct.stock,
+    });
+
+    return newProduct;
   }
 
   async findAll() {
@@ -77,6 +90,7 @@ export class ProductService {
       },
     });
   }
+
 
   async remove(id: string, currentUser: any) {
     const product = await this.findOne(id);
